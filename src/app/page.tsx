@@ -1,13 +1,16 @@
 import { Button } from '@/components/ui/button'
+import prisma from '@/lib/db';
 import React from 'react'
 
-const page = () => {
+const page = async() => {
+
+  const users = await prisma.user.findMany();
 
   return (
     <div className='min-h-screen flex items-center justify-center bg-gray-300'>
-      <Button variant={"outline"}>
-        Click me
-      </Button>
+      {users.map((user) => <Button variant={"outline"}>
+        {user.name}
+      </Button>)}
     </div>
   )
 }
