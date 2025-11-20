@@ -26,10 +26,16 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
-const registerSchema = z.object({
-  email: z.email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-}) // refine
+const registerSchema = z
+  .object({
+    email: z.email("Please enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type registerFormValues = z.infer<typeof registerSchema>;
 
@@ -39,6 +45,7 @@ export function RegisterForm() {
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
@@ -113,8 +120,26 @@ export function RegisterForm() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="********"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <Button type="submit" className="w-full" disabled={isPending}>
-                    Register
+                    Sign up
                   </Button>
                 </div>
                 <div className="text-center text-sm">
