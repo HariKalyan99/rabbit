@@ -51,7 +51,7 @@ export function RegisterForm() {
     },
   });
 
-  const onSubmit = async(values: registerFormValues) => {
+  const onSubmit = async (values: registerFormValues) => {
     await authClient.signUp.email(
       {
         name: values.email,
@@ -65,9 +65,9 @@ export function RegisterForm() {
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);
-        }
-      },
-    )
+        },
+      }
+    );
   };
 
   const isPending = form.formState.isSubmitting;
@@ -75,7 +75,7 @@ export function RegisterForm() {
   return (
     <div onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col justify-center items-center">
           <CardTitle>Get Started</CardTitle>
           <CardDescription>Create your account to get started</CardDescription>
         </CardHeader>
@@ -90,6 +90,12 @@ export function RegisterForm() {
                     type="button"
                     disabled={isPending}
                   >
+                    <Image
+                      src={"/logos/github.svg"}
+                      width={20}
+                      height={20}
+                      alt="github_logo"
+                    />
                     Continue with Github
                   </Button>
                   <Button
@@ -98,6 +104,12 @@ export function RegisterForm() {
                     type="button"
                     disabled={isPending}
                   >
+                    <Image
+                      src={"/logos/google.svg"}
+                      width={20}
+                      height={20}
+                      alt="google_logo"
+                    />
                     Continue with Google
                   </Button>
                 </div>
