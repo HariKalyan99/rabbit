@@ -16,8 +16,9 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
               width={30}
               height={30}
             />
-            Rabbit
+            Cebe
           </Link>
+          <span className="text-center">"pamuk eller cebe"</span>
           {children}
         </div>
       </div>
