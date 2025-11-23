@@ -91,3 +91,16 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
   - src/components/ui/input-group.tsx
   - src/components/ui/toggle-group.tsx
   - src/components/ui/sidebar.tsx -->
+
+
+
+  <!-- to run your app in local -->
+
+
+  <!-- npx inngest-cli@latest dev -->
+  <!-- npm run dev -->
+  <!-- npx prisma studio -->
+
+  <!-- migrate: npx prisma migrate dev -->
+
+  <!-- mprocs: npm run dev:all-->
