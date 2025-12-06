@@ -13,21 +13,16 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export const ManualTriggerDialog = ({ open, onOpenChange }: Props) => {
+export const HttpRequestDialog = ({ open, onOpenChange }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Manual Trigger</DialogTitle>
+          <DialogTitle>Http Request</DialogTitle>
           <DialogDescription>
-            Configure settings for the manual trigger node.
+            Configure settings for the Http request node.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <p className="text-sm text-muted-foreground">
-            Used to manually create a workflow
-          </p>
-        </div>
       </DialogContent>
     </Dialog>
   );
