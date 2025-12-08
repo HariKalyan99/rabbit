@@ -87,39 +87,44 @@ export const workflowsRouter = createTRPCRouter({
         },
       });
 
-      return await prisma.$transaction(async (tx) => {
-        await tx.node.deleteMany({
-          where: { workflowId: id },
-        });
+      return await prisma.$transaction(
+        async (tx) => {
+          await tx.node.deleteMany({
+            where: { workflowId: id },
+          });
 
-        await tx.node.createMany({
-          data: nodes.map((node) => ({
-            id: node.id,
-            workflowId: id,
-            name: node.type || "unknown",
-            type: node.type as NodeType,
-            position: node.position,
-            data: node.data || [],
-          })),
-        });
+          await tx.node.createMany({
+            data: nodes.map((node) => ({
+              id: node.id,
+              workflowId: id,
+              name: node.type || "unknown",
+              type: node.type as NodeType,
+              position: node.position,
+              data: node.data || [],
+            })),
+          });
 
-        await tx.connection.createMany({
-          data: edges.map((edge) => ({
-            workflowId: id,
-            fromNodeId: edge.source,
-            toNodeId: edge.target,
-            fromOutput: edge.sourceHandle || "main",
-            toInput: edge.targetHandle || "main",
-          })),
-        });
+          await tx.connection.createMany({
+            data: edges.map((edge) => ({
+              workflowId: id,
+              fromNodeId: edge.source,
+              toNodeId: edge.target,
+              fromOutput: edge.sourceHandle || "main",
+              toInput: edge.targetHandle || "main",
+            })),
+          });
 
-        await tx.workflow.update({
-          where: { id },
-          data: { updatedAt: new Date() },
-        });
+          await tx.workflow.update({
+            where: { id },
+            data: { updatedAt: new Date() },
+          });
 
-        return workflow;
-      });
+          return workflow;
+        },
+        {
+          timeout: 20000, // 20 seconds timeout
+        }
+      );
     }),
   updateName: protectedProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1) }))
