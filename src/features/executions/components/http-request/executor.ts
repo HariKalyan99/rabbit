@@ -3,9 +3,12 @@ import type { NodeExecutor } from "@/features/executions/types";
 import { NonRetriableError } from "inngest";
 import ky, { type Options as kyOptions } from "ky";
 
-HandleBars.registerHelper("json", (context) =>
-  JSON.stringify(context, null, 2)
-);
+HandleBars.registerHelper("json", (context) => {
+  const jsonString = JSON.stringify(context, null, 2);
+  const safeString = new HandleBars.SafeString(jsonString);
+
+  return safeString;
+});
 
 type HttpRequestData = {
   variableName: string;
@@ -41,6 +44,7 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
 
     if (["POST", "PUT", "PATCH"].includes(method)) {
       const resolved = HandleBars.compile(data.body || "{}")(context);
+      console.log("BODY", resolved);
       JSON.parse(resolved);
       options.body = resolved;
       options.headers = {
