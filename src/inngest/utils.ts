@@ -1,4 +1,5 @@
 import toposort from "toposort";
+import { inngest } from "./client";
 
 type NodeWithId = { id: string };
 type ConnectionWithIds = { fromNodeId: string; toNodeId: string };
@@ -41,4 +42,14 @@ export const topologicalSort = <T extends NodeWithId>(
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   return sortedNodeIds.map((id) => nodeMap.get(id)!).filter(Boolean); //non null assertion
+};
+
+export const sendWorkflowExecution = async (data: {
+  workflowId: string;
+  [key: string]: any;
+}) => {
+  return inngest.send({
+    name: "workflows/execute.workflow",
+    data,
+  });
 };
