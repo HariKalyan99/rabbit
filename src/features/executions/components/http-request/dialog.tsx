@@ -40,7 +40,7 @@ const formSchema = z.object({
       message:
         "Variable name must start with a letter or underscore and contain only letters, numbers and underscores",
     }),
-  endpoint: z.url({ message: "Please enter a valid url" }),
+  endpoint: z.string().min(1, { message: "Please enter a valid url" }),
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
   body: z.string().optional(),
   // refine: json5
@@ -160,6 +160,7 @@ export const HttpRequestDialog = ({
                     Static URL or use {"{{variables}}"} for simple values or{" "}
                     {"{{json variable}}"} to stringify objects.
                   </FormDescription>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -186,7 +187,6 @@ export const HttpRequestDialog = ({
                       simple values or {"{{json variable}}"} to stringify
                       objects
                     </FormDescription>
-
                     <FormMessage />
                   </FormItem>
                 )}
