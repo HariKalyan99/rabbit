@@ -17,14 +17,12 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json();
 
-    const formData = {
-      formId: body.formId,
-      formTitle: body.formTitle,
-      responseId: body.responseId,
-      timeStamp: body.timeStamp,
-      respondentEmail: body.respondentEmail,
-      responses: body.responses,
-      raw: body,
+    const stripeData = {
+      eventId: body.id,
+      eventType: body.type,
+      timeStamp: body.created,
+      liveMode: body.liveMode,
+      raw: body?.object,
     };
     // trigger an inngest job
 
@@ -32,7 +30,7 @@ export async function POST(request: NextRequest) {
       workflowId,
 
       initialData: {
-        googleForm: formData,
+        stripe: stripeData,
       },
     });
 
@@ -45,9 +43,9 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Google form webhook error", error);
+    console.error("Stripe webhook error", error);
     return NextResponse.json(
-      { success: false, error: "Failed to process Google Form Submission" },
+      { success: false, error: "Failed to process Stripe event" },
       { status: 500 }
     );
   }
