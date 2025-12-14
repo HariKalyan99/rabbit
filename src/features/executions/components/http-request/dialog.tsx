@@ -109,7 +109,9 @@ export const HttpRequestDialog = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Variable Name</FormLabel>
-                  <Input placeholder="myApiCall" {...field} />
+                  <FormControl>
+                    <Input placeholder="myApiCall" {...field} />
+                  </FormControl>
                   <FormDescription>
                     Use this name to reference the result in other nodes{" "}
                     {`{{${watchVariableName}.httpResponse.data}}`}
