@@ -1,9 +1,9 @@
 import HandleBars from "handlebars";
 import type { NodeExecutor } from "@/features/executions/types";
 import { NonRetriableError } from "inngest";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { geminiChannel } from "@/inngest/channels/gemini";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { anthropicChannel } from "@/inngest/channels/anthropic";
 
 HandleBars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -12,13 +12,13 @@ HandleBars.registerHelper("json", (context) => {
   return safeString;
 });
 
-type GeminiData = {
+type AnthropicData = {
   variableName?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
 
-export const geminiExecutor: NodeExecutor<GeminiData> = async ({
+export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
   data,
   nodeId,
   context,
@@ -28,7 +28,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
   // publish loading state for manual trigger
 
   await publish(
-    geminiChannel().status({
+    anthropicChannel().status({
       nodeId,
       status: "loading",
     })
@@ -36,24 +36,24 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
 
   if (!data.variableName) {
     await publish(
-      geminiChannel().status({
+      anthropicChannel().status({
         nodeId,
         status: "error",
       })
     );
 
-    throw new NonRetriableError("Gemini node: Variable name is missing");
+    throw new NonRetriableError("Anthropic node: Variable name is missing");
   }
 
   if (!data.userPrompt) {
     await publish(
-      geminiChannel().status({
+      anthropicChannel().status({
         nodeId,
         status: "error",
       })
     );
 
-    throw new NonRetriableError("Gemini node: User prompt is missing");
+    throw new NonRetriableError("Anthropic node: User prompt is missing");
   }
 
   // throw if credentials is missing
@@ -66,29 +66,46 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
 
   // fetch credentials that user selected
 
-  const credentialValue = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const credentialValue = process.env.ANTHROPIC_API_KEY;
 
-  const google = createGoogleGenerativeAI({
+  if (!credentialValue) {
+    await publish(
+      anthropicChannel().status({
+        nodeId,
+        status: "error",
+      })
+    );
+
+    throw new NonRetriableError(
+      "Anthropic node: ANTHROPIC_API_KEY is missing"
+    );
+  }
+
+  const anthropic = createAnthropic({
     apiKey: credentialValue,
   });
 
   try {
-    const { steps } = await step.ai.wrap("gemini-generate-text", generateText, {
-      model: google("gemini-2.5-flash"),
-      system: systemPrompt,
-      prompt: userPrompt,
-      experimental_telemetry: {
-        isEnabled: true,
-        recordInputs: true,
-        recordOutputs: true,
-      },
-    });
+    const { steps } = await step.ai.wrap(
+      "anthropic-generate-text",
+      generateText,
+      {
+        model: anthropic("claude-sonnet-4-5"),
+        system: systemPrompt,
+        prompt: userPrompt,
+        experimental_telemetry: {
+          isEnabled: true,
+          recordInputs: true,
+          recordOutputs: true,
+        },
+      }
+    );
 
     const text =
       steps[0].content[0].type === "text" ? steps[0].content[0].text : "";
 
     await publish(
-      geminiChannel().status({
+      anthropicChannel().status({
         nodeId,
         status: "success",
       })
@@ -102,7 +119,7 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
     };
   } catch (error) {
     await publish(
-      geminiChannel().status({
+      anthropicChannel().status({
         nodeId,
         status: "error",
       })

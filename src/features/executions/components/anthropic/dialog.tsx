@@ -37,15 +37,15 @@ const formSchema = z.object({
   userPrompt: z.string().min(1, "User prompt is required"),
 });
 
-export type GeminiFormValues = z.infer<typeof formSchema>;
+export type AnthropicFormValues = z.infer<typeof formSchema>;
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: z.infer<typeof formSchema>) => void;
-  defaultValues?: Partial<GeminiFormValues>;
+  defaultValues?: Partial<AnthropicFormValues>;
 }
 
-export const GeminiDialog = ({
+export const AnthropicDialog = ({
   open,
   onOpenChange,
   onSubmit,
@@ -70,7 +70,7 @@ export const GeminiDialog = ({
     }
   }, [open, defaultValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myGemini";
+  const watchVariableName = form.watch("variableName") || "myAnthropic";
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
     onOpenChange(false);
@@ -80,7 +80,7 @@ export const GeminiDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Gemini Configurations</DialogTitle>
+          <DialogTitle>Anthropic Configurations</DialogTitle>
           <DialogDescription>
             Configure the AI model and prompts for this node.
           </DialogDescription>
@@ -96,7 +96,7 @@ export const GeminiDialog = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Variable Name</FormLabel>
-                  <Input placeholder="myGemini" {...field} />
+                  <Input placeholder="myAnthropic" {...field} />
                   <FormDescription>
                     Use this name to reference the result in other nodes{" "}
                     {`{{${watchVariableName}.text}}`}
