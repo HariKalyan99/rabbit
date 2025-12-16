@@ -1,6 +1,4 @@
-import { generateSlug } from "random-word-slugs";
 import prisma from "@/lib/db";
-import { Node, Edge } from "@xyflow/react";
 import {
   createTRPCRouter,
   premiumProcedure,
@@ -8,7 +6,7 @@ import {
 } from "@/trpc/init";
 import z from "zod";
 import { PAGINATION } from "@/config/constants";
-import { CredentialType, NodeType } from "@/generated/prisma/enums";
+import { CredentialType } from "@/generated/prisma/enums";
 
 export const credentialsRouter = createTRPCRouter({
   create: premiumProcedure
@@ -51,7 +49,7 @@ export const credentialsRouter = createTRPCRouter({
         value: z.string().min(1, "Value is required"),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(({ ctx, input }) => {
       const { id, name, type, value } = input;
       return prisma.credential.update({
         where: {
@@ -68,7 +66,7 @@ export const credentialsRouter = createTRPCRouter({
 
   getOne: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .query(({ ctx, input }) => {
       return prisma.credential.findUniqueOrThrow({
         where: {
           id: input.id,
@@ -106,13 +104,6 @@ export const credentialsRouter = createTRPCRouter({
           orderBy: {
             updatedAt: "desc",
           },
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            createdAt: true,
-            updatedAt: true,
-          },
         }),
         prisma.credential.count({
           where: {
@@ -138,5 +129,22 @@ export const credentialsRouter = createTRPCRouter({
         hasNextPage,
         hasPreviousPage,
       };
+    }),
+
+  getByType: protectedProcedure
+    .input(
+      z.object({
+        type: z.enum(CredentialType),
+      })
+    )
+    .query(({ input, ctx }) => {
+      const { type } = input;
+
+      return prisma.credential.findMany({
+        where: { type, userId: ctx.auth.user.id },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
     }),
 });
