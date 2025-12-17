@@ -4,6 +4,7 @@ import { NonRetriableError } from "inngest";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { anthropicChannel } from "@/inngest/channels/anthropic";
+import prisma from "@/lib/db";
 
 HandleBars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -22,6 +23,7 @@ type AnthropicData = {
 export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
   data,
   nodeId,
+  userId,
   context,
   step,
   publish,
@@ -68,7 +70,18 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
     throw new NonRetriableError("Anthropic node: User prompt is missing");
   }
 
-  // throw if credentials is missing
+  const credential = await step.run("get-credential", () => {
+    return prisma.credential.findUnique({
+      where: {
+        id: data.credentialId, // this can be injected
+        userId,
+      },
+    });
+  });
+
+  if (!credential) {
+    throw new NonRetriableError("Gemini node: Credential not found");
+  }
 
   const systemPrompt = data.systemPrompt
     ? HandleBars.compile(data.systemPrompt)(context)
