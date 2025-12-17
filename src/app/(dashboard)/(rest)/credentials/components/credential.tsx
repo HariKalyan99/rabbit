@@ -34,7 +34,7 @@ import { useUpgradeModal } from "@/hooks/use-upgrade-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
@@ -92,7 +92,7 @@ export const CredentialForm = ({ initialData }: CredentialFormProps) => {
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!isEdit && initialData?.id) {
+    if (isEdit && initialData?.id) {
       await updateCredential.mutateAsync({
         id: initialData.id,
         ...values,
@@ -181,7 +181,7 @@ export const CredentialForm = ({ initialData }: CredentialFormProps) => {
                   <FormItem>
                     <FormLabel>API Key</FormLabel>
                     <FormControl>
-                      <Input placeholder="sk-..." {...field} />
+                      <Input type="password" placeholder="sk-..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,4 +210,10 @@ export const CredentialForm = ({ initialData }: CredentialFormProps) => {
       </Card>
     </>
   );
+};
+
+export const CredentialView = ({ credentialId }: { credentialId: string }) => {
+  const { data: credential } = useSuspenseCredential(credentialId);
+
+  return <CredentialForm initialData={credential} />;
 };

@@ -12,8 +12,8 @@ import {
   LoadingView,
 } from "@/components/entity-components";
 import { useRouter } from "next/navigation";
-import type { Workflow } from "@/generated/prisma/client";
-import { WorkflowIcon } from "lucide-react";
+import type { Credential } from "@/generated/prisma/client";
+import { CredentialType } from "@/generated/prisma/enums";
 import { formatDistanceToNow } from "date-fns";
 import { useCredentialParams } from "@/features/credentials/hooks/use-credentials-params";
 import {
@@ -21,6 +21,7 @@ import {
   useSuspenseCredentials,
 } from "@/features/credentials/hooks/use-credentials";
 import { useEntitySearch } from "@/features/credentials/hooks/use-entity-search";
+import Image from "next/image";
 
 export const CredentialsSearch = () => {
   const router = useRouter();
@@ -64,7 +65,7 @@ export const CredentialsList = () => {
     <EntityList
       items={credentials.data.items}
       getKey={(credential) => credential.id}
-      renderItem={(workflow) => <CredentialsItem data={workflow} />}
+      renderItem={(credential) => <CredentialsItem data={credential} />}
       emptyView={<CredentialsEmpty />}
     />
   );
@@ -121,12 +122,20 @@ export const CredentialsEmpty = () => {
   );
 };
 
-export const CredentialsItem = ({ data }: { data: Workflow }) => {
+const credentialLogos: Record<CredentialType, string> = {
+  [CredentialType.OPENAI]: "/logos/openai.svg",
+  [CredentialType.GEMINI]: "/logos/gemini.svg",
+  [CredentialType.ANTHROPIC]: "/logos/anthropic.svg",
+};
+
+export const CredentialsItem = ({ data }: { data: Credential }) => {
   const removeCredential = useRemoveCredential();
 
   const handleRemove = () => {
     removeCredential.mutate({ id: data.id });
   };
+
+  const logo = credentialLogos[data.type] || "/logos/openai.svg";
 
   return (
     <EntityItem
@@ -140,7 +149,7 @@ export const CredentialsItem = ({ data }: { data: Workflow }) => {
       }
       image={
         <div className="size-8 flex items-center justify-center">
-          <WorkflowIcon className="size-5 tetx-muted-foreground" />
+          <Image src={logo} alt={data.type} width={20} height={20} />
         </div>
       }
       onRemove={handleRemove}
