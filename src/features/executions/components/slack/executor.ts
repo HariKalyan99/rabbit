@@ -1,10 +1,9 @@
 import HandleBars from "handlebars";
 import type { NodeExecutor } from "@/features/executions/types";
 import { NonRetriableError } from "inngest";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { geminiChannel } from "@/inngest/channels/gemini";
-import { generateText } from "ai";
-import prisma from "@/lib/db";
+import { decode } from "html-entities";
+import ky from "ky";
+import { slackChannel } from "@/inngest/channels/slack";
 
 HandleBars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -13,17 +12,15 @@ HandleBars.registerHelper("json", (context) => {
   return safeString;
 });
 
-type GeminiData = {
+type SlackData = {
   variableName?: string;
-  credentialId?: string;
-  systemPrompt?: string;
-  userPrompt?: string;
+  webhookUrl?: string;
+  content?: string;
 };
 
-export const geminiExecutor: NodeExecutor<GeminiData> = async ({
+export const slackExecutor: NodeExecutor<SlackData> = async ({
   data,
   nodeId,
-  userId,
   context,
   step,
   publish,
@@ -31,99 +28,73 @@ export const geminiExecutor: NodeExecutor<GeminiData> = async ({
   // publish loading state for manual trigger
 
   await publish(
-    geminiChannel().status({
+    slackChannel().status({
       nodeId,
       status: "loading",
     })
   );
 
-  if (!data.variableName) {
+  if (!data.content) {
     await publish(
-      geminiChannel().status({
+      slackChannel().status({
         nodeId,
         status: "error",
       })
     );
 
-    throw new NonRetriableError("Gemini node: Variable name is missing");
+    throw new NonRetriableError("Slack node: Content message is required");
   }
-
-  if (!data.credentialId) {
-    await publish(
-      geminiChannel().status({
-        nodeId,
-        status: "error",
-      })
-    );
-
-    throw new NonRetriableError("Gemini node: Credential is missing");
-  }
-
-  if (!data.userPrompt) {
-    await publish(
-      geminiChannel().status({
-        nodeId,
-        status: "error",
-      })
-    );
-
-    throw new NonRetriableError("Gemini node: User prompt is missing");
-  }
-
-  const systemPrompt = data.systemPrompt
-    ? HandleBars.compile(data.systemPrompt)(context)
-    : "You are a helpful assistant.";
-
-  const userPrompt = HandleBars.compile(data.userPrompt)(context);
-
-  const credential = await step.run("get-credential", () => {
-    return prisma.credential.findUnique({
-      where: {
-        id: data.credentialId, // this can be injected
-        userId,
-      },
-    });
-  });
-
-  if (!credential) {
-    throw new NonRetriableError("Gemini node: Credential not found");
-  }
-
-  const google = createGoogleGenerativeAI({
-    apiKey: credential.value,
-  });
+  const rawContent = HandleBars.compile(data.content)(context);
+  const content = decode(rawContent);
 
   try {
-    const { steps } = await step.ai.wrap("gemini-generate-text", generateText, {
-      model: google("gemini-2.5-flash"),
-      system: systemPrompt,
-      prompt: userPrompt,
-      experimental_telemetry: {
-        isEnabled: true,
-        recordInputs: true,
-        recordOutputs: true,
-      },
+    const result = await step.run("slack-webhook", async () => {
+      if (!data.webhookUrl) {
+        await publish(
+          slackChannel().status({
+            nodeId,
+            status: "error",
+          })
+        );
+
+        throw new NonRetriableError("Slack node: Webhook URL is required");
+      }
+      await ky.post(data.webhookUrl, {
+        json: {
+          content, // The key depends on the workflow config
+        },
+      });
+
+      if (!data.variableName) {
+        await publish(
+          slackChannel().status({
+            nodeId,
+            status: "error",
+          })
+        );
+
+        throw new NonRetriableError("Slack node: Variable name is missing");
+      }
+
+      return {
+        ...context,
+        [data.variableName]: {
+          messageContent: content.slice(0, 2000),
+        },
+      };
     });
 
-    const text =
-      steps[0].content[0].type === "text" ? steps[0].content[0].text : "";
-
     await publish(
-      geminiChannel().status({
+      slackChannel().status({
         nodeId,
         status: "success",
       })
     );
 
-    return {
-      ...context,
-      [data.variableName]: {
-        text,
-      },
-    };
+    return result;
   } catch (error) {
     await publish(
-      geminiChannel().status({
+      slackChannel().status({
         nodeId,
         status: "error",
       })

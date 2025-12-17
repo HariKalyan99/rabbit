@@ -1,14 +1,14 @@
 "use server";
 
-import { geminiChannel } from "@/inngest/channels/gemini";
+import { slackChannel } from "@/inngest/channels/slack";
 import { inngest } from "@/inngest/client";
 import { getSubscriptionToken, type Realtime } from "@inngest/realtime";
 
-export type GeminiToken = Realtime.Token<typeof geminiChannel, ["status"]>;
+export type SlackToken = Realtime.Token<typeof slackChannel, ["status"]>;
 
-export async function fetchGeminiRealtimeToken(): Promise<GeminiToken> {
+export async function fetchSlackRealtimeToken(): Promise<SlackToken> {
   const token = await getSubscriptionToken(inngest, {
-    channel: geminiChannel(),
+    channel: slackChannel(),
     topics: ["status"],
   });
 

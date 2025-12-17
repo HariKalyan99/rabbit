@@ -24,16 +24,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useCredentialsByType } from "@/features/credentials/hooks/use-credentials";
-import { CredentialType } from "@/generated/prisma/enums";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import Image from "next/image";
 
 const formSchema = z.object({
   variableName: z
@@ -43,34 +33,30 @@ const formSchema = z.object({
       message:
         "Variable name must start with a letter or underscore and contain only letters, numbers and underscores",
     }),
-  credentialId: z.string().min(1, "Credential is required"),
-  systemPrompt: z.string().optional(),
-  userPrompt: z.string().min(1, "User prompt is required"),
+  content: z.string().min(1, "Message content is required"),
+  webhookUrl: z.string().min(1, "Webhook URL is required"),
 });
 
-export type GeminiFormValues = z.infer<typeof formSchema>;
+export type SlackFormValues = z.infer<typeof formSchema>;
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: z.infer<typeof formSchema>) => void;
-  defaultValues?: Partial<GeminiFormValues>;
+  defaultValues?: Partial<SlackFormValues>;
 }
 
-export const GeminiDialog = ({
+export const SlackDialog = ({
   open,
   onOpenChange,
   onSubmit,
   defaultValues = {},
 }: Props) => {
-  const { data: credentials, isLoading: isLoadingCredentials } =
-    useCredentialsByType(CredentialType.GEMINI);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       variableName: defaultValues.variableName || "",
-      credentialId: defaultValues.credentialId || "",
-      systemPrompt: defaultValues.systemPrompt || "",
-      userPrompt: defaultValues.userPrompt || "",
+      content: defaultValues.content || "",
+      webhookUrl: defaultValues.webhookUrl || "",
     },
   });
 
@@ -78,14 +64,13 @@ export const GeminiDialog = ({
     if (open) {
       form.reset({
         variableName: defaultValues.variableName || "",
-        credentialId: defaultValues.credentialId || "",
-        systemPrompt: defaultValues.systemPrompt || "",
-        userPrompt: defaultValues.userPrompt || "",
+        content: defaultValues.content || "",
+        webhookUrl: defaultValues.webhookUrl || "",
       });
     }
   }, [open, defaultValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myGemini";
+  const watchVariableName = form.watch("variableName") || "mySlack";
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
     onOpenChange(false);
@@ -95,9 +80,9 @@ export const GeminiDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Gemini Configurations</DialogTitle>
+          <DialogTitle>Slack Configurations</DialogTitle>
           <DialogDescription>
-            Configure the AI model and prompts for this node.
+            Configure the slack settings for this node.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -111,7 +96,7 @@ export const GeminiDialog = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Variable Name</FormLabel>
-                  <Input placeholder="myGemini" {...field} />
+                  <Input placeholder="mySlack" {...field} />
                   <FormDescription>
                     Use this name to reference the result in other nodes{" "}
                     {`{{${watchVariableName}.text}}`}
@@ -123,58 +108,23 @@ export const GeminiDialog = ({
 
             <FormField
               control={form.control}
-              name="credentialId"
+              name="webhookUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gemini Credential</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingCredentials || !credentials?.length}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a credential" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {credentials?.map((credential) => (
-                        <SelectItem key={credential.id} value={credential.id}>
-                          <div className="flex items-center gap-2">
-                            <Image
-                              src={"/logos/gemini.svg"}
-                              alt={"gemini"}
-                              width={16}
-                              height={16}
-                            />
-                            {credential.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="systemPrompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>System Prompt (optional)</FormLabel>
+                  <FormLabel>Webhook URL</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <Input
+                      placeholder="https://hooks.slack.com/api/webhooks/..."
                       {...field}
-                      placeholder={"You are a helpful assistant"}
-                      className="min-h-[80px] font-mono text-sm"
                     />
                   </FormControl>
                   <FormDescription>
-                    Sets the behaviour of the assistant. Use {"{{variables}}"}{" "}
-                    for simple values or {"{{json variable}}"} to stringify
-                    objects
+                    Get this from Slack: Workspace Settings → Workflows →
+                    Webhooks
+                  </FormDescription>
+
+                  <FormDescription>
+                    Make sure you have "content" variable
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -183,22 +133,20 @@ export const GeminiDialog = ({
 
             <FormField
               control={form.control}
-              name="userPrompt"
+              name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>User Prompt</FormLabel>
+                  <FormLabel>Message Content</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder={
-                        "Summarisze this text: {{json.httpResponse.data"
-                      }
-                      className="min-h-[120px] font-mono text-sm"
+                      placeholder={"Summary: {{myGemini.text}}"}
+                      className="min-h-[80px] font-mono text-sm"
                     />
                   </FormControl>
                   <FormDescription>
-                    The prompt to send to the AI. Use {"{{variables}}"} for
-                    simple values or {"{{json variable}}"} to stringify objects
+                    The message to send. Use {"{{variables}}"} for simple values
+                    or {"{{json variable}}"} to stringify objects
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
