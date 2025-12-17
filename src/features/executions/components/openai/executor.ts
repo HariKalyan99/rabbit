@@ -14,6 +14,7 @@ HandleBars.registerHelper("json", (context) => {
 
 type OpenAiData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -42,7 +43,18 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
       })
     );
 
-    throw new NonRetriableError("OenAi node: Variable name is missing");
+    throw new NonRetriableError("OpenAi node: Variable name is missing");
+  }
+
+  if (!data.credentialId) {
+    await publish(
+      openaiChannel().status({
+        nodeId,
+        status: "error",
+      })
+    );
+
+    throw new NonRetriableError("OpenAI node: Credential is missing");
   }
 
   if (!data.userPrompt) {
@@ -53,7 +65,7 @@ export const openAiExecutor: NodeExecutor<OpenAiData> = async ({
       })
     );
 
-    throw new NonRetriableError("OenAi node: User prompt is missing");
+    throw new NonRetriableError("OpenAi node: User prompt is missing");
   }
 
   // throw if credentials is missing

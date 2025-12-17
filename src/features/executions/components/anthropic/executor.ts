@@ -14,6 +14,7 @@ HandleBars.registerHelper("json", (context) => {
 
 type AnthropicData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -43,6 +44,17 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
     );
 
     throw new NonRetriableError("Anthropic node: Variable name is missing");
+  }
+
+  if (!data.credentialId) {
+    await publish(
+      anthropicChannel().status({
+        nodeId,
+        status: "error",
+      })
+    );
+
+    throw new NonRetriableError("Anthropic node: Credential is missing");
   }
 
   if (!data.userPrompt) {
@@ -76,9 +88,7 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
       })
     );
 
-    throw new NonRetriableError(
-      "Anthropic node: ANTHROPIC_API_KEY is missing"
-    );
+    throw new NonRetriableError("Anthropic node: ANTHROPIC_API_KEY is missing");
   }
 
   const anthropic = createAnthropic({
