@@ -1,4 +1,13 @@
 import { requireAuth } from "@/lib/auth-utils";
+import { CredentialView } from "../components/credential";
+import { prefetchCredential } from "@/features/credentials/server/prefetch";
+import { HydrateClient } from "@/trpc/server";
+import { ErrorBoundary } from "react-error-boundary";
+import {
+  CredentialsError,
+  CredentialsLoading,
+} from "../components/credentials";
+import { Suspense } from "react";
 
 interface PageProps {
   params: Promise<{
@@ -7,11 +16,24 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-    await requireAuth(); //protect routes
+  await requireAuth(); //protect routes
 
   const { credentialId } = await params;
+  prefetchCredential(credentialId);
 
-  return <p>Credential ID: {credentialId}</p>;
+  return (
+    <div className="p-4 md:px-10 md:py-6 h-full">
+      <div className="mx-auto max-w-screen-md w-full flex flex-col gap-y-8 h-full">
+        <HydrateClient>
+          <ErrorBoundary fallback={<CredentialsError />}>
+            <Suspense fallback={<CredentialsLoading />}>
+              <CredentialView credentialId={credentialId} />
+            </Suspense>
+          </ErrorBoundary>
+        </HydrateClient>
+      </div>
+    </div>
+  );
 };
 
 export default Page;
