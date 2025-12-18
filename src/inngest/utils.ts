@@ -1,5 +1,6 @@
 import toposort from "toposort";
 import { inngest } from "./client";
+import { createId } from "@paralleldrive/cuid2";
 
 type NodeWithId = { id: string };
 type ConnectionWithIds = { fromNodeId: string; toNodeId: string };
@@ -51,5 +52,6 @@ export const sendWorkflowExecution = async (data: {
   return inngest.send({
     name: "workflows/execute.workflow",
     data,
+    id: createId(),
   });
 };
