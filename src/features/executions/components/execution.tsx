@@ -45,6 +45,7 @@ const formatStatus = (status: ExecutionStatus) => {
 
 export const ExecutionView = ({ executionId }: { executionId: string }) => {
   const { data: execution } = useSuspenseExecution(executionId);
+
   const [showStackTrace, setShowStackTrace] = useState(false);
   const [showFullError, setShowFullError] = useState(false);
 
