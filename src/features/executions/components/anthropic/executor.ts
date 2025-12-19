@@ -5,6 +5,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { anthropicChannel } from "@/inngest/channels/anthropic";
 import prisma from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
 
 HandleBars.registerHelper("json", (context) => {
   const jsonString = JSON.stringify(context, null, 2);
@@ -89,23 +90,8 @@ export const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
 
   const userPrompt = HandleBars.compile(data.userPrompt)(context);
 
-  // fetch credentials that user selected
-
-  const credentialValue = process.env.ANTHROPIC_API_KEY;
-
-  if (!credentialValue) {
-    await publish(
-      anthropicChannel().status({
-        nodeId,
-        status: "error",
-      })
-    );
-
-    throw new NonRetriableError("Anthropic node: ANTHROPIC_API_KEY is missing");
-  }
-
   const anthropic = createAnthropic({
-    apiKey: credentialValue,
+    apiKey: decrypt(credential.value),
   });
 
   try {
