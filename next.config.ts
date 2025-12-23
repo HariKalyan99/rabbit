@@ -12,7 +12,16 @@ const nextConfig: NextConfig = {
         permanent: false
       }
     ]
-  }
+  },
+  // Ensure Prisma query engine binaries are included in serverless functions
+  outputFileTracingIncludes: {
+    '/api/**': [
+      './src/generated/prisma/**/*.node',
+    ],
+    '/**': [
+      './src/generated/prisma/**/*.node',
+    ],
+  },
 };
 
 export default withSentryConfig(nextConfig, {
